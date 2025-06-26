@@ -2,15 +2,18 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
-from io import BytesIO
 import os
+from io import BytesIO
 
 # === Load Models ===
-base_path = os.path.dirname(os.path.abspath(__file__))
+@st.cache_resource
+def load_models():
+    model_g = joblib.load("model_g_xgb.pkl")
+    model_c = joblib.load("model_c_xgb.pkl")
+    model_w = joblib.load("model_w_xgb.pkl")
+    return model_g, model_c, model_w
 
-model_g = joblib.load(os.path.join(base_path, 'model_g_xgb.pkl'))
-model_c = joblib.load(os.path.join(base_path, 'model_c_xgb.pkl'))
-model_w = joblib.load(os.path.join(base_path, 'model_w_xgb.pkl'))
+model_g, model_c, model_w = load_models()
 
 # === Feature Engineering ===
 def engineer_features(df):
@@ -27,9 +30,15 @@ def engineer_features(df):
 st.set_page_config(page_title="Gas Wells Production Rate Predictor", layout="wide")
 col1, col2 = st.columns([1, 1])
 with col1:
-    st.image("OIP.jfif", width=150)
+    if os.path.exists("OIP.jfif"):
+        st.image("OIP.jfif", width=150)
+    else:
+        st.warning("OIP.jfif not found.")
 with col2:
-    st.image("picocheiron_logo.jpeg", width=150)
+    if os.path.exists("picocheiron_logo.jpeg"):
+        st.image("picocheiron_logo.jpeg", width=150)
+    else:
+        st.warning("Logo not found.")
 
 st.title("Gas Wells Production Rate Predictor")
 st.markdown("Upload a file or manually input well data to predict **Gas**, **Condensate**, and **Water** rates.")
@@ -37,43 +46,56 @@ st.markdown("Upload a file or manually input well data to predict **Gas**, **Con
 # === Input Method ===
 option = st.radio("Choose input method:", ("Manual Input", "Upload Excel File"))
 
+# === Get feature names from model
+def get_expected_features(model):
+    if hasattr(model, "get_booster"):
+        return model.get_booster().feature_names
+    elif hasattr(model, "feature_names_in_"):
+        return list(model.feature_names_in_)
+    else:
+        return []
+
+expected_features = get_expected_features(model_g)
+
+# === Manual Input ===
 if option == "Manual Input":
     with st.form("manual_form"):
-        thp = st.number_input('THP (bar)')
-        flp = st.number_input('FLP (bar)')
-        choke = st.number_input('Choke (%)')
-        flt = st.number_input('FLT ©')
-        gsg = st.number_input('Gas Specific Gravity')
-        api = st.number_input('Oil Gravity (API)')
-        dp1 = st.number_input('Venturi ΔP1 (mbar)')
-        dp2 = st.number_input('Venturi ΔP2 (mbar)')
+        thp = st.number_input('THP (bar)', value=50.0)
+        flp = st.number_input('FLP (bar)', value=30.0)
+        choke = st.number_input('Choke (%)', value=40.0)
+        flt = st.number_input('FLT ©', value=80.0)
+        gsg = st.number_input('Gas Specific Gravity', value=0.65)
+        api = st.number_input('Oil Gravity (API)', value=40.0)
+        dp1 = st.number_input('Venturi ΔP1 (mbar)', value=200.0)
+        dp2 = st.number_input('Venturi ΔP2 (mbar)', value=150.0)
         submitted = st.form_submit_button("Predict")
 
     if submitted:
-        row = pd.DataFrame([{
-            'THP (bar)': thp, 'FLP (bar)': flp, 'Choke (%)': choke,
-            'FLT ©': flt, 'Gas Specific Gravity': gsg, 'Oil Gravity (API)': api,
-            'Venturi ΔP1 (mbar)': dp1, 'Venturi ΔP2 (mbar)': dp2
-        }])
+        try:
+            row = pd.DataFrame([{
+                'THP (bar)': thp, 'FLP (bar)': flp, 'Choke (%)': choke,
+                'FLT ©': flt, 'Gas Specific Gravity': gsg, 'Oil Gravity (API)': api,
+                'Venturi ΔP1 (mbar)': dp1, 'Venturi ΔP2 (mbar)': dp2
+            }])
+            feat = engineer_features(row)
+            X = pd.concat([row, feat.drop(columns=row.columns)], axis=1)
 
-        # Engineering
-        feat = engineer_features(row)
-        X = pd.concat([row, feat.drop(columns=row.columns)], axis=1)
+            # Ensure correct column order
+            X = X[expected_features]
 
-        # Reorder columns to match training
-        expected_features = model_g.get_booster().feature_names if hasattr(model_g, 'get_booster') else model_g.feature_names_in_
-        X = X[expected_features]
+            # Predictions
+            gas = np.clip(model_g.predict(X), 0, None)[0]
+            cond = np.clip(model_c.predict(X), 0, None)[0]
+            water = np.clip(model_w.predict(X), 0, None)[0]
 
-        # Predict
-        gas = np.clip(model_g.predict(X), 0, None)[0]
-        cond = np.clip(model_c.predict(X), 0, None)[0]
-        water = np.clip(model_w.predict(X), 0, None)[0]
+            st.success("✅ Predicted Rates")
+            st.write(f"**Gas Rate:** {gas:.4f} MMSCFD")
+            st.write(f"**Condensate Rate:** {cond:.4f} BPD")
+            st.write(f"**Water Rate:** {water:.4f} BPD")
+        except Exception as e:
+            st.error(f"Prediction failed: {e}")
 
-        st.success("Predicted Rates")
-        st.write(f"**Gas Rate:** {gas:.4f} MMSCFD")
-        st.write(f"**Condensate Rate:** {cond:.4f} BPD")
-        st.write(f"**Water Rate:** {water:.4f} BPD")
-
+# === File Upload ===
 else:
     uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
 
@@ -83,13 +105,17 @@ else:
             required_cols = ['THP (bar)', 'FLP (bar)', 'Choke (%)', 'FLT ©',
                              'Gas Specific Gravity', 'Oil Gravity (API)',
                              'Venturi ΔP1 (mbar)', 'Venturi ΔP2 (mbar)']
-
             missing = [col for col in required_cols if col not in df_input.columns]
+
             if missing:
-                st.error(f"Missing columns: {missing}. Please check your file.")
+                st.error(f"❌ Missing columns: {missing}. Please check your file.")
             else:
+                df_input = df_input[required_cols]
                 feat_df = engineer_features(df_input)
                 X_all = pd.concat([df_input, feat_df.drop(columns=df_input.columns)], axis=1)
+
+                # Match model training features
+                X_all = X_all[expected_features]
 
                 gas_pred = np.clip(model_g.predict(X_all), 0, None)
                 cond_pred = np.clip(model_c.predict(X_all), 0, None)
@@ -101,7 +127,7 @@ else:
 
                 st.success("✅ Predictions completed. Download your results below.")
                 output = BytesIO()
-                df_input.to_excel(output, index=False)
+                df_input.to_excel(output, index=False, engine='openpyxl')
                 st.download_button("Download Predictions", output.getvalue(), file_name="predicted_output.xlsx")
         except Exception as e:
-            st.error(f"Something went wrong: {e}")
+            st.error(f"❌ Something went wrong: {e}")
