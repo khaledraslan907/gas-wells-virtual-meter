@@ -55,8 +55,16 @@ if option == "Manual Input":
             'FLT ©': flt, 'Gas Specific Gravity': gsg, 'Oil Gravity (API)': api,
             'Venturi ΔP1 (mbar)': dp1, 'Venturi ΔP2 (mbar)': dp2
         }])
+
+        # Engineering
         feat = engineer_features(row)
         X = pd.concat([row, feat.drop(columns=row.columns)], axis=1)
+
+        # Reorder columns to match training
+        expected_features = model_g.get_booster().feature_names if hasattr(model_g, 'get_booster') else model_g.feature_names_in_
+        X = X[expected_features]
+
+        # Predict
         gas = np.clip(model_g.predict(X), 0, None)[0]
         cond = np.clip(model_c.predict(X), 0, None)[0]
         water = np.clip(model_w.predict(X), 0, None)[0]
