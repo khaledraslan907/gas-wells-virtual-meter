@@ -29,8 +29,7 @@ def engineer_features(df):
 # === UI Setup ===
 st.set_page_config(page_title="Gas Wells Production Rate Predictor", layout="wide")
 
-# Layout
-# === Header layout with balanced spacing ===
+# === Header layout ===
 col1, col2, col3 = st.columns([1, 2, 1])
 
 with col1:
@@ -66,54 +65,52 @@ def get_expected_features(model):
 expected_features = get_expected_features(model_g)
 
 # === Manual Input ===
-# === Manual Input ===
 if option == "Manual Input":
     with st.form("manual_form"):
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            thp = st.number_input('THP (bar)', help="Tubing Head Pressure", step=None, format="%.2f")
-            choke = st.number_input('Choke (%)', help="Choke Valve Opening (%)", step=None, format="%.2f")
-            flp = st.number_input('FLP (bar)', help="Flowline Pressure", step=None, format="%.2f")
+            thp = st.number_input('THP (bar)', help="Tubing Head Pressure", min_value=0.01, format="%.2f")
+            choke = st.number_input('Choke (%)', help="Choke Valve Opening (%)", min_value=0.01, format="%.2f")
+            flp = st.number_input('FLP (bar)', help="Flowline Pressure", min_value=0.01, format="%.2f")
 
         with col2:
-            flt = st.number_input('FLT ©', help="Flowline Temperature (°C)", step=None, format="%.2f")
-            api = st.number_input('Oil Gravity (API)', value=44.1, help="Default: typical oil gravity", step=None, format="%.2f")
-            gsg = st.number_input('Gas Specific Gravity', value=0.76, help="Default: typical gas gravity", step=None, format="%.2f")
+            flt = st.number_input('FLT ©', help="Flowline Temperature (°C)", min_value=0.01, format="%.2f")
+            api = st.number_input('Oil Gravity (API)', value=44.1, help="Default: typical oil gravity", min_value=0.01, format="%.2f")
+            gsg = st.number_input('Gas Specific Gravity', value=0.76, help="Default: typical gas gravity", min_value=0.01, format="%.2f")
 
         with col3:
-            dp1 = st.number_input('Venturi ΔP1 (mbar)', help="Venturi Differential Pressure 1", step=None, format="%.2f")
-            dp2 = st.number_input('Venturi ΔP2 (mbar)', help="Venturi Differential Pressure 2", step=None, format="%.2f")
+            dp1 = st.number_input('Venturi ΔP1 (mbar)', help="Venturi Differential Pressure 1", min_value=0.01, format="%.2f")
+            dp2 = st.number_input('Venturi ΔP2 (mbar)', help="Venturi Differential Pressure 2", min_value=0.01, format="%.2f")
 
         submitted = st.form_submit_button("Predict")
 
-# === Check that all fields are filled before prediction ===
-if submitted:
-    inputs = [thp, choke, flp, flt, api, gsg, dp1, dp2]
-    if any(val is None for val in inputs):
-        st.error("❗ Please fill in all input fields with valid non-zero values before predicting.")
-    else:
-        try:
-            row = pd.DataFrame([{
-                'THP (bar)': thp, 'FLP (bar)': flp, 'Choke (%)': choke,
-                'FLT ©': flt, 'Gas Specific Gravity': gsg, 'Oil Gravity (API)': api,
-                'Venturi ΔP1 (mbar)': dp1, 'Venturi ΔP2 (mbar)': dp2
-            }])
-            feat = engineer_features(row)
-            X = pd.concat([row, feat.drop(columns=row.columns)], axis=1)
-            X = X[expected_features]
+    if submitted:
+        inputs = [thp, choke, flp, flt, api, gsg, dp1, dp2]
+        if any(val is None or val == 0 for val in inputs):
+            st.error("❗ Please fill in all input fields with valid non-zero values before predicting.")
+        else:
+            try:
+                row = pd.DataFrame([{
+                    'THP (bar)': thp, 'FLP (bar)': flp, 'Choke (%)': choke,
+                    'FLT ©': flt, 'Gas Specific Gravity': gsg, 'Oil Gravity (API)': api,
+                    'Venturi ΔP1 (mbar)': dp1, 'Venturi ΔP2 (mbar)': dp2
+                }])
+                feat = engineer_features(row)
+                X = pd.concat([row, feat.drop(columns=row.columns)], axis=1)
+                X = X[expected_features]
 
-            gas = np.clip(model_g.predict(X), 0, None)[0]
-            cond = np.clip(model_c.predict(X), 0, None)[0]
-            water = np.clip(model_w.predict(X), 0, None)[0]
+                gas = np.clip(model_g.predict(X), 0, None)[0]
+                cond = np.clip(model_c.predict(X), 0, None)[0]
+                water = np.clip(model_w.predict(X), 0, None)[0]
 
-            st.success("✅ Predicted Rates")
-            st.markdown(f"**Gas Rate:** {gas:.2f} MMSCFD")
-            st.markdown(f"**Condensate Rate:** {int(cond)} BPD")
-            st.markdown(f"**Water Rate:** {int(water)} BPD")
+                st.success("✅ Predicted Rates")
+                st.markdown(f"**Gas Rate:** {gas:.2f} MMSCFD")
+                st.markdown(f"**Condensate Rate:** {int(cond)} BPD")
+                st.markdown(f"**Water Rate:** {int(water)} BPD")
 
-        except Exception as e:
-            st.error(f"Prediction failed: {e}")
+            except Exception as e:
+                st.error(f"Prediction failed: {e}")
 
 # === File Upload ===
 else:
@@ -149,6 +146,3 @@ else:
                 st.download_button("Download Predictions", output.getvalue(), file_name="predicted_output.xlsx")
         except Exception as e:
             st.error(f"❌ Something went wrong: {e}")
-
-
-
