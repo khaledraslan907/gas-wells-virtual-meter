@@ -31,18 +31,12 @@ st.set_page_config(page_title="Gas Wells Production Rate Predictor", layout="wid
 
 # Layout
 # Load image safely
-def load_image_safely(path, width=None):
-    try:
-        return Image.open(path)
-    except Exception:
-        return None
+
         
 col1, col2, col3 = st.columns([1, 2, 1])
 
 with col1:
-    img1 = load_image_safely("OIP.jfif")
-    if img1:
-        st.image(img1, width=110)
+    st.image(img1, width=110)
 
 with col2:
     st.markdown(
@@ -55,9 +49,7 @@ with col2:
     )
 
 with col3:
-    img2 = load_image_safely("picocheiron_logo.jpg")
-    if img2:
-        st.image(img2, width=110)
+    st.image(img2, width=110)
 
 st.markdown("Upload a file or manually input well data to predict **Gas**, **Condensate**, and **Water** rates.")
 
