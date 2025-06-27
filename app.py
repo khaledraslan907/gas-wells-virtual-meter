@@ -4,7 +4,6 @@ import numpy as np
 import joblib
 import os
 from io import BytesIO
-from datetime import datetime
 
 # === Load Models ===
 @st.cache_resource
@@ -30,13 +29,18 @@ def engineer_features(df):
 # === UI Setup ===
 st.set_page_config(page_title="Gas Wells Production Rate Predictor", layout="wide")
 
-header_col1, header_col2, header_col3 = st.columns([1, 2, 1])
-with header_col1:
-    st.image("OIP.jfif", width=100)
-with header_col2:
-    st.markdown("<h1 style='text-align: center;'>Gas Wells Production Rate Predictor</h1>", unsafe_allow_html=True)
-with header_col3:
-    st.image("picocheiron_logo.jpg", width=100)
+# Aligned logos and centered title with spacing
+logo_col1, title_col, logo_col2 = st.columns([1, 3, 1])
+with logo_col1:
+    st.image("OIP.jfif", width=120)
+with title_col:
+    st.markdown("""
+        <div style='text-align: center;'>
+            <h1 style='font-size: 2.5rem; margin: 0;'>Gas Wells Production Rate Predictor</h1>
+        </div>
+    """, unsafe_allow_html=True)
+with logo_col2:
+    st.image("picocheiron_logo.jpeg", width=120)
 
 st.markdown("Upload a file or manually input well data to predict **Gas**, **Condensate**, and **Water** rates.")
 
@@ -136,9 +140,5 @@ else:
         except Exception as e:
             st.error(f"❌ Something went wrong: {e}")
 
-# === History Viewer ===
-if st.session_state.history:
-    st.markdown("### Prediction History")
-    hist_df = pd.DataFrame(st.session_state.history, columns=["Timestamp", "Gas (MMSCFD)", "Condensate (BPD)", "Water (BPD)"])
-    st.dataframe(hist_df[::-1], use_container_width=True)
+
 
