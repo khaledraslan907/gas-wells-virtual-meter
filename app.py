@@ -113,13 +113,16 @@ if option == "Manual Input":
                 
                 st.markdown(
                     f"""
-                    <div style='font-size: 20px; padding: 10px;'>
-                        <span style='color:#1f77b4; font-weight: bold;'>Gas Rate:</span> 
-                        <span style='color:white;'>{gas:.2f} MMSCFD</span><br><br>
-                        <span style='color:#2ca02c; font-weight: bold;'>Condensate Rate:</span> 
-                        <span style='color:white;'>{int(cond)} BPD</span><br><br>
-                        <span style='color:#d62728; font-weight: bold;'>Water Rate:</span> 
-                        <span style='color:white;'>{int(water)} BPD</span>
+                    <div style='font-size: 20px; padding: 15px; border-radius: 10px; background-color: #111827;'>
+                        <p style='color:#1f77b4; margin-bottom:10px;'>
+                            🔷 <strong>Gas Rate:</strong> {gas:.2f} MMSCFD
+                        </p>
+                        <p style='color:#2ca02c; margin-bottom:10px;'>
+                            🛢️ <strong>Condensate Rate:</strong> {int(cond)} BPD
+                        </p>
+                        <p style='color:#d62728; margin-bottom:0;'>
+                            💧 <strong>Water Rate:</strong> {int(water)} BPD
+                        </p>
                     </div>
                     """,
                     unsafe_allow_html=True
