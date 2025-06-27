@@ -120,7 +120,7 @@ if option == "Manual Input":
                     flt = f_to_c(flt)
 
                 row = pd.DataFrame([{
-                    'THP (bar)': thp, 'FLP (bar)': flp, 'Choke (%)': choke * 100,
+                    'THP (bar)': thp, 'FLP (bar)': flp, 'Choke (%)': choke,
                     'FLT ©': flt, 'Gas Specific Gravity': gsg, 'Oil Gravity (API)': api,
                     'Venturi ΔP1 (mbar)': dp1, 'Venturi ΔP2 (mbar)': dp2
                 }])
