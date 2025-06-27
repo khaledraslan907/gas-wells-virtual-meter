@@ -70,32 +70,34 @@ if option == "Manual Input":
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            thp = st.number_input('THP (bar)', help="Tubing Head Pressure", min_value=0.01, format="%.2f")
-            choke = st.number_input('Choke (%)', help="Choke Valve Opening (%)", min_value=0.01, format="%.2f")
-            flp = st.number_input('FLP (bar)', help="Flowline Pressure", min_value=0.01, format="%.2f")
+            thp = st.text_input('THP (bar)', help="Tubing Head Pressure")
+            choke = st.text_input('Choke (%)', help="Choke Valve Opening (%)")
+            flp = st.text_input('FLP (bar)', help="Flowline Pressure")
 
         with col2:
-            flt = st.number_input('FLT ©', help="Flowline Temperature (°C)", min_value=0.01, format="%.2f")
-            api = st.number_input('Oil Gravity (API)', value=44.1, help="Default: typical oil gravity", min_value=0.01, format="%.2f")
-            gsg = st.number_input('Gas Specific Gravity', value=0.76, help="Default: typical gas gravity", min_value=0.01, format="%.2f")
+            flt = st.text_input('FLT ©', help="Flowline Temperature (\u00b0C)")
+            api = st.text_input('Oil Gravity (API)')
+            gsg = st.text_input('Gas Specific Gravity')
 
         with col3:
-            dp1 = st.number_input('Venturi ΔP1 (mbar)', help="Venturi Differential Pressure 1", min_value=0.01, format="%.2f")
-            dp2 = st.number_input('Venturi ΔP2 (mbar)', help="Venturi Differential Pressure 2", min_value=0.01, format="%.2f")
+            dp1 = st.text_input('Venturi ΔP1 (mbar)', help="Venturi Differential Pressure 1")
+            dp2 = st.text_input('Venturi ΔP2 (mbar)', help="Venturi Differential Pressure 2")
 
         submitted = st.form_submit_button("Predict")
 
     if submitted:
         inputs = [thp, choke, flp, flt, api, gsg, dp1, dp2]
-        if any(val is None for val in inputs):
-            st.error("❗ Please fill in all input fields with valid values before predicting.")
+        if any(i.strip() == '' for i in inputs):
+            st.error("❗ Please enter all input fields with valid numerical values before predicting.")
         else:
             try:
+                numeric_inputs = [float(i) for i in inputs]
                 row = pd.DataFrame([{
-                    'THP (bar)': thp, 'FLP (bar)': flp, 'Choke (%)': choke,
-                    'FLT ©': flt, 'Gas Specific Gravity': gsg, 'Oil Gravity (API)': api,
-                    'Venturi ΔP1 (mbar)': dp1, 'Venturi ΔP2 (mbar)': dp2
+                    'THP (bar)': numeric_inputs[0], 'Choke (%)': numeric_inputs[1], 'FLP (bar)': numeric_inputs[2],
+                    'FLT ©': numeric_inputs[3], 'Oil Gravity (API)': numeric_inputs[4], 'Gas Specific Gravity': numeric_inputs[5],
+                    'Venturi ΔP1 (mbar)': numeric_inputs[6], 'Venturi ΔP2 (mbar)': numeric_inputs[7]
                 }])
+
                 feat = engineer_features(row)
                 X = pd.concat([row, feat.drop(columns=row.columns)], axis=1)
                 X = X[expected_features]
