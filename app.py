@@ -29,17 +29,28 @@ def engineer_features(df):
 # === UI Setup ===
 st.set_page_config(page_title="Gas Wells Production Rate Predictor", layout="wide")
 
-header_col1, header_col2, header_col3 = st.columns([1, 3, 1])
-with header_col1:
-    st.image("OIP.jfif", width=100)
-with header_col2:
-    st.markdown("""
-    <div style='text-align: center; margin-top: 20px;'>
-        <h1>Gas Wells Production Rate Predictor</h1>
-    </div>
-    """, unsafe_allow_html=True)
-with header_col3:
-    st.image("picocheiron_logo.jpg", width=100)
+# Layout
+col1, col2, col3 = st.columns([1, 2, 1])
+
+with col1:
+    img1 = load_image_safely("OIP.jfif")
+    if img1:
+        st.image(img1, width=110)
+
+with col2:
+    st.markdown(
+        """
+        <div style="display: flex; justify-content: center; align-items: center; height: 100%;">
+            <h1 style="margin-top: 30px; text-align: center;">Gas Wells Production Rate Predictor</h1>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+with col3:
+    img2 = load_image_safely("picocheiron_logo.jpeg")
+    if img2:
+        st.image(img2, width=110)
 
 st.markdown("Upload a file or manually input well data to predict **Gas**, **Condensate**, and **Water** rates.")
 
