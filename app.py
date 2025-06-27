@@ -26,10 +26,17 @@ def engineer_features(df):
     df['condensate_correction'] = df['temp_pressure'] / df['FLP (bar)'].replace(0, 1e-3)
     return df
 
+# === Unit Conversion Functions ===
+def psi_to_bar(psi):
+    return psi * 0.0689476
+
+def f_to_c(f):
+    return (f - 32) * 5.0 / 9.0
+
 # === UI Setup ===
 st.set_page_config(page_title="Gas Wells Production Rate Predictor", layout="wide")
 
-# === Header layout ===
+# Layout
 col1, col2, col3 = st.columns([1, 2, 1])
 
 with col1:
@@ -68,49 +75,64 @@ expected_features = get_expected_features(model_g)
 if option == "Manual Input":
     with st.form("manual_form"):
         col1, col2, col3 = st.columns(3)
-    
+
         with col1:
-            thp = st.text_input('THP (bar)', help="Tubing Head Pressure")
-            choke = st.text_input('Choke (%)', help="Choke Valve Opening (0–100%)")
-            flp = st.text_input('FLP (bar)', help="Flowline Pressure")
-    
+            thp_unit = st.selectbox("THP Unit", ["bar", "psi"])
+            thp_val = st.text_input("THP", help="Tubing Head Pressure")
+            choke_val = st.text_input("Choke (%)", help="Choke Valve Opening (%) (0-100)")
+            flp_unit = st.selectbox("FLP Unit", ["bar", "psi"])
+            flp_val = st.text_input("FLP", help="Flowline Pressure")
+
         with col2:
-            flt = st.text_input('FLT ©', help="Flowline Temperature (°C)")
-            api = st.text_input('Oil Gravity (API)', placeholder="e.g. 44.1", help="Typical Oil Gravity (default 44.1)")
-            gsg = st.text_input('Gas Specific Gravity', placeholder="e.g. 0.76", help="Typical Gas Gravity (default 0.76)")
-    
+            flt_unit = st.selectbox("Temperature Unit", ["°C", "°F"])
+            flt_val = st.text_input("FLT", help="Flowline Temperature")
+            api_val = st.text_input("Oil Gravity (API)", value="44.1", help="Default: typical oil gravity")
+            gsg_val = st.text_input("Gas Specific Gravity", value="0.76", help="Default: typical gas gravity")
+
         with col3:
-            dp1 = st.text_input('Venturi ΔP1 (mbar)', help="Venturi Differential Pressure 1")
-            dp2 = st.text_input('Venturi ΔP2 (mbar)', help="Venturi Differential Pressure 2")
-    
+            dp1_val = st.text_input("Venturi ΔP1 (mbar)", help="Venturi Differential Pressure 1")
+            dp2_val = st.text_input("Venturi ΔP2 (mbar)", help="Venturi Differential Pressure 2")
+
         submitted = st.form_submit_button("Predict")
-    
+
     if submitted:
         try:
-            # Attempt conversion
-            inputs = {
-                'THP (bar)': float(thp), 'Choke (%)': float(choke) / 100, 'FLP (bar)': float(flp),
-                'FLT ©': float(flt), 'Oil Gravity (API)': float(api), 'Gas Specific Gravity': float(gsg),
-                'Venturi ΔP1 (mbar)': float(dp1), 'Venturi ΔP2 (mbar)': float(dp2)
-            }
-    
-            # Validation rules
-            if any(val < 0 for key, val in inputs.items() if key != 'Choke (%)'):
-                st.error("❗ All values must be positive numbers.")
-            elif not (0 <= inputs['Choke (%)'] <= 100):
-                st.error("❗ Choke (%) must be between 0 and 100.")
+            inputs = [thp_val, choke_val, flp_val, flt_val, api_val, gsg_val, dp1_val, dp2_val]
+            if any(val.strip() == "" or float(val) < 0 for val in inputs):
+                st.error("❗ Please enter only positive numeric values.")
+            elif float(choke_val) > 100:
+                st.error("❗ Choke percentage must be between 0 and 100.")
             else:
-                row = pd.DataFrame([inputs])
+                thp = float(thp_val)
+                flp = float(flp_val)
+                flt = float(flt_val)
+                choke = float(choke_val) / 100.0
+                api = float(api_val)
+                gsg = float(gsg_val)
+                dp1 = float(dp1_val)
+                dp2 = float(dp2_val)
+
+                if thp_unit == "psi":
+                    thp = psi_to_bar(thp)
+                if flp_unit == "psi":
+                    flp = psi_to_bar(flp)
+                if flt_unit == "°F":
+                    flt = f_to_c(flt)
+
+                row = pd.DataFrame([{
+                    'THP (bar)': thp, 'FLP (bar)': flp, 'Choke (%)': choke * 100,
+                    'FLT ©': flt, 'Gas Specific Gravity': gsg, 'Oil Gravity (API)': api,
+                    'Venturi ΔP1 (mbar)': dp1, 'Venturi ΔP2 (mbar)': dp2
+                }])
                 feat = engineer_features(row)
                 X = pd.concat([row, feat.drop(columns=row.columns)], axis=1)
                 X = X[expected_features]
-    
+
                 gas = np.clip(model_g.predict(X), 0, None)[0]
                 cond = np.clip(model_c.predict(X), 0, None)[0]
                 water = np.clip(model_w.predict(X), 0, None)[0]
-    
+
                 st.success("✅ Predicted Rates")
-                
                 st.markdown(
                     f"""
                     <div style='font-size: 20px; padding: 15px; border-radius: 10px; background-color: #111827;'>
@@ -127,12 +149,9 @@ if option == "Manual Input":
                     """,
                     unsafe_allow_html=True
                 )
+
         except ValueError:
             st.error("❗ Please enter only numeric values in all fields.")
-        except Exception as e:
-            st.error(f"❌ Prediction failed: {e}")
-
-
 
 # === File Upload ===
 else:
@@ -168,3 +187,15 @@ else:
                 st.download_button("Download Predictions", output.getvalue(), file_name="predicted_output.xlsx")
         except Exception as e:
             st.error(f"❌ Something went wrong: {e}")
+
+# === Feedback Form ===
+st.markdown("---")
+st.markdown("### Feedback or Correction")
+feedback = st.text_area("If you notice incorrect predictions or have additional notes, please share them below:")
+if st.button("Submit Feedback"):
+    if feedback.strip():
+        with open("user_feedback.txt", "a") as f:
+            f.write(feedback + "\n\n")
+        st.success("✅ Thank you for your feedback!")
+    else:
+        st.warning("⚠️ Please enter some feedback before submitting.")
