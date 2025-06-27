@@ -89,7 +89,7 @@ if option == "Manual Input":
         try:
             # Attempt conversion
             inputs = {
-                'THP (bar)': float(thp), 'Choke (%)': float(choke), 'FLP (bar)': float(flp),
+                'THP (bar)': float(thp), 'Choke (%)': float(choke) / 100, 'FLP (bar)': float(flp),
                 'FLT ©': float(flt), 'Oil Gravity (API)': float(api), 'Gas Specific Gravity': float(gsg),
                 'Venturi ΔP1 (mbar)': float(dp1), 'Venturi ΔP2 (mbar)': float(dp2)
             }
