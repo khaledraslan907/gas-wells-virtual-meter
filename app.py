@@ -110,9 +110,20 @@ if option == "Manual Input":
                 water = np.clip(model_w.predict(X), 0, None)[0]
     
                 st.success("✅ Predicted Rates")
-                st.markdown(f"**Gas Rate:** {gas:.2f} MMSCFD")
-                st.markdown(f"**Condensate Rate:** {int(cond)} BPD")
-                st.markdown(f"**Water Rate:** {int(water)} BPD")
+                
+                st.markdown(
+                    f"""
+                    <div style='font-size: 20px; padding: 10px;'>
+                        <span style='color:#1f77b4; font-weight: bold;'>Gas Rate:</span> 
+                        <span style='color:white;'>{gas:.2f} MMSCFD</span><br><br>
+                        <span style='color:#2ca02c; font-weight: bold;'>Condensate Rate:</span> 
+                        <span style='color:white;'>{int(cond)} BPD</span><br><br>
+                        <span style='color:#d62728; font-weight: bold;'>Water Rate:</span> 
+                        <span style='color:white;'>{int(water)} BPD</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
         except ValueError:
             st.error("❗ Please enter only numeric values in all fields.")
         except Exception as e:
