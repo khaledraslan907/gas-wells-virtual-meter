@@ -87,8 +87,8 @@ if option == "Manual Input":
 
     if submitted:
         inputs = [thp, choke, flp, flt, api, gsg, dp1, dp2]
-        if any(val is None or val == 0 for val in inputs):
-            st.error("❗ Please fill in all input fields with valid non-zero values before predicting.")
+        if any(val is None for val in inputs):
+            st.error("❗ Please fill in all input fields with valid values before predicting.")
         else:
             try:
                 row = pd.DataFrame([{
