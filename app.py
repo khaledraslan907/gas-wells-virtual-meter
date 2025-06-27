@@ -34,7 +34,7 @@ st.set_page_config(page_title="Gas Wells Production Rate Predictor", layout="wid
 col1, col2, col3 = st.columns([1, 2, 1])
 
 with col1:
-    st.image("OIP.jfif", width=110)
+    st.image("OIP.jfif", width=120)
 
 with col2:
     st.markdown(
