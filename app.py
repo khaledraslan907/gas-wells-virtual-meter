@@ -27,7 +27,7 @@ def engineer_features(df):
     return df
 
 # === UI Setup ===
-st.set_page_config(page_title="Gas Wells Production Rate Predictor", layout="tight")
+st.set_page_config(page_title="Gas Wells Production Rate Predictor", layout="wide")
 
 header_col1, header_col2, header_col3 = st.columns([1, 3, 1])
 with header_col1:
