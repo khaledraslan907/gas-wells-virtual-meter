@@ -39,8 +39,8 @@ with col1:
 with col2:
     st.markdown(
         """
-        <div style="text-align: center; margin-top: 20px;">
-            <h1 style="font-size: 32px;">Gas Wells Production Rate Predictor</h1>
+        <div style="display: flex; align-items: flex-start; justify-content: flex-start; height: 100%;">
+            <h1 style="margin-top: 10px; font-size: 30px;">Gas Wells Production Rate Predictor</h1>
         </div>
         """,
         unsafe_allow_html=True
