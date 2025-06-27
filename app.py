@@ -47,7 +47,7 @@ with col2:
     )
 
 with col3:
-    st.image("picocheiron_logo.jpg", width=100)
+    st.image("picocheiron_logo.jpg", width=120)
 
 st.markdown("Upload a file or manually input well data to predict **Gas**, **Condensate**, and **Water** rates.")
 
