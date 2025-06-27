@@ -4,6 +4,7 @@ import numpy as np
 import joblib
 import os
 from io import BytesIO
+from datetime import datetime
 
 # === Load Models ===
 @st.cache_resource
@@ -29,13 +30,13 @@ def engineer_features(df):
 # === UI Setup ===
 st.set_page_config(page_title="Gas Wells Production Rate Predictor", layout="wide")
 
-header_col1, header_col2, header_col3 = st.columns([1, 3, 1])
+header_col1, header_col2, header_col3 = st.columns([1, 2, 1])
 with header_col1:
-    st.image("OIP.jfif", width=120)
+    st.image("OIP.jfif", width=100)
 with header_col2:
     st.markdown("<h1 style='text-align: center;'>Gas Wells Production Rate Predictor</h1>", unsafe_allow_html=True)
 with header_col3:
-    st.image("picocheiron_logo.jpeg", width=120)
+    st.image("picocheiron_logo.jpeg", width=100)
 
 st.markdown("Upload a file or manually input well data to predict **Gas**, **Condensate**, and **Water** rates.")
 
@@ -53,24 +54,25 @@ def get_expected_features(model):
 
 expected_features = get_expected_features(model_g)
 
+# === History ===
+if "history" not in st.session_state:
+    st.session_state.history = []
+
 # === Manual Input ===
 if option == "Manual Input":
     with st.form("manual_form"):
         col1, col2, col3 = st.columns(3)
         with col1:
-            thp = st.number_input('THP (bar)')
-            choke = st.number_input('Choke (%)')
-            flp = st.number_input('FLP (bar)')
-          
+            thp = st.number_input('THP (bar)', help="Tubing Head Pressure")
+            choke = st.number_input('Choke (%)', help="Choke Valve Opening (%)")
+            flp = st.number_input('FLP (bar)', help="Flowline Pressure")
         with col2:
-            flt = st.number_input('FLT ©')
-            api = st.number_input('Oil Gravity (API)', value=44.1)
-            gsg = st.number_input('Gas Specific Gravity', value=0.760)
-            
+            flt = st.number_input('FLT ©', help="Flowline Temperature (°C)")
+            api = st.number_input('Oil Gravity (API)', , value=44.1help="Oil Specific Gravity")
+            gsg = st.number_input('Gas Specific Gravity', , value=0.760, help="Gas Specific Gravity")
         with col3:
-            dp1 = st.number_input('Venturi ΔP1 (mbar)')
-            dp2 = st.number_input('Venturi ΔP2 (mbar)')
-
+            dp1 = st.number_input('Venturi ΔP1 (mbar)', help="Venturi Differential Pressure 1")
+            dp2 = st.number_input('Venturi ΔP2 (mbar)', help="Venturi Differential Pressure 2")
         submitted = st.form_submit_button("Predict")
 
     if submitted:
@@ -92,6 +94,10 @@ if option == "Manual Input":
             st.markdown(f"**Gas Rate:** {gas:.2f} MMSCFD")
             st.markdown(f"**Condensate Rate:** {int(cond)} BPD")
             st.markdown(f"**Water Rate:** {int(water)} BPD")
+
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            st.session_state.history.append((timestamp, gas, cond, water))
+
         except Exception as e:
             st.error(f"Prediction failed: {e}")
 
@@ -129,3 +135,9 @@ else:
                 st.download_button("Download Predictions", output.getvalue(), file_name="predicted_output.xlsx")
         except Exception as e:
             st.error(f"❌ Something went wrong: {e}")
+
+# === History Viewer ===
+if st.session_state.history:
+    st.markdown("### Prediction History")
+    hist_df = pd.DataFrame(st.session_state.history, columns=["Timestamp", "Gas (MMSCFD)", "Condensate (BPD)", "Water (BPD)"])
+    st.dataframe(hist_df[::-1], use_container_width=True)
