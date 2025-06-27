@@ -48,7 +48,7 @@ with col2:
     )
 
 with col3:
-    img2 = load_image_safely("picocheiron_logo.jpeg")
+    img2 = load_image_safely("picocheiron_logo.jpg")
     if img2:
         st.image(img2, width=110)
 
