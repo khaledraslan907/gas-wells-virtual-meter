@@ -63,16 +63,16 @@ if option == "Manual Input":
     with st.form("manual_form"):
         col1, col2, col3 = st.columns(3)
         with col1:
-            thp = st.number_input('THP (bar)', help="Tubing Head Pressure")
-            choke = st.number_input('Choke (%)', help="Choke Valve Opening (%)")
-            flp = st.number_input('FLP (bar)', help="Flowline Pressure")
+            thp = st.number_input('THP (bar)', value=50.0, help="Tubing Head Pressure")
+            choke = st.number_input('Choke (%)', value=40.0, help="Choke Valve Opening (%)")
+            flp = st.number_input('FLP (bar)', value=30.0, help="Flowline Pressure")
         with col2:
-            flt = st.number_input('FLT ©', help="Flowline Temperature (°C)")
-            api = st.number_input('Oil Gravity (API)', , value=44.1help="Oil Specific Gravity")
-            gsg = st.number_input('Gas Specific Gravity', , value=0.760, help="Gas Specific Gravity")
+            flt = st.number_input('FLT ©', value=80.0, help="Flowline Temperature (°C)")
+            api = st.number_input('Oil Gravity (API)', value=44.1, help="Oil Specific Gravity")
+            gsg = st.number_input('Gas Specific Gravity', value=0.760, help="Gas Specific Gravity")
         with col3:
-            dp1 = st.number_input('Venturi ΔP1 (mbar)', help="Venturi Differential Pressure 1")
-            dp2 = st.number_input('Venturi ΔP2 (mbar)', help="Venturi Differential Pressure 2")
+            dp1 = st.number_input('Venturi ΔP1 (mbar)', value=200.0, help="Venturi Differential Pressure 1")
+            dp2 = st.number_input('Venturi ΔP2 (mbar)', value=150.0, help="Venturi Differential Pressure 2")
         submitted = st.form_submit_button("Predict")
 
     if submitted:
@@ -141,3 +141,4 @@ if st.session_state.history:
     st.markdown("### Prediction History")
     hist_df = pd.DataFrame(st.session_state.history, columns=["Timestamp", "Gas (MMSCFD)", "Condensate (BPD)", "Water (BPD)"])
     st.dataframe(hist_df[::-1], use_container_width=True)
+
