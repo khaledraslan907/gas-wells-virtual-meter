@@ -86,33 +86,35 @@ if option == "Manual Input":
         submitted = st.form_submit_button("Predict")
 
     if submitted:
-        inputs = [thp, choke, flp, flt, api, gsg, dp1, dp2]
-        if any(i.strip() == '' for i in inputs):
-            st.error("❗ Please enter all input fields with valid numerical values before predicting.")
-        else:
-            try:
-                numeric_inputs = [float(i) for i in inputs]
-                row = pd.DataFrame([{
-                    'THP (bar)': numeric_inputs[0], 'Choke (%)': numeric_inputs[1], 'FLP (bar)': numeric_inputs[2],
-                    'FLT ©': numeric_inputs[3], 'Oil Gravity (API)': numeric_inputs[4], 'Gas Specific Gravity': numeric_inputs[5],
-                    'Venturi ΔP1 (mbar)': numeric_inputs[6], 'Venturi ΔP2 (mbar)': numeric_inputs[7]
-                }])
-
+        try:
+            # Attempt to convert all inputs to float
+            inputs = {
+                'THP (bar)': float(thp), 'Choke (%)': float(choke), 'FLP (bar)': float(flp),
+                'FLT ©': float(flt), 'Oil Gravity (API)': float(api), 'Gas Specific Gravity': float(gsg),
+                'Venturi ΔP1 (mbar)': float(dp1), 'Venturi ΔP2 (mbar)': float(dp2)
+            }
+    
+            if any(val == "" or pd.isna(val) for val in inputs.values()):
+                st.error("❗ Please fill in all input fields before predicting.")
+            else:
+                row = pd.DataFrame([inputs])
                 feat = engineer_features(row)
                 X = pd.concat([row, feat.drop(columns=row.columns)], axis=1)
                 X = X[expected_features]
-
+    
                 gas = np.clip(model_g.predict(X), 0, None)[0]
                 cond = np.clip(model_c.predict(X), 0, None)[0]
                 water = np.clip(model_w.predict(X), 0, None)[0]
-
+    
                 st.success("✅ Predicted Rates")
                 st.markdown(f"**Gas Rate:** {gas:.2f} MMSCFD")
                 st.markdown(f"**Condensate Rate:** {int(cond)} BPD")
                 st.markdown(f"**Water Rate:** {int(water)} BPD")
+        except ValueError:
+            st.error("❗ Please enter only numbers in all fields.")
+        except Exception as e:
+            st.error(f"❌ Prediction failed: {e}")
 
-            except Exception as e:
-                st.error(f"Prediction failed: {e}")
 
 # === File Upload ===
 else:
