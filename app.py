@@ -114,7 +114,7 @@ if option == "Manual Input":
                 st.markdown(
                     f"""
                     <div style='font-size: 20px; padding: 15px; border-radius: 10px; background-color: #111827;'>
-                        <p style='color:#1f77b4; margin-bottom:10px;'>
+                        <p style='color:#00d2ff; margin-bottom:10px;'>
                             🔷 <strong>Gas Rate:</strong> {gas:.2f} MMSCFD
                         </p>
                         <p style='color:#2ca02c; margin-bottom:10px;'>
