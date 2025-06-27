@@ -28,25 +28,21 @@ def engineer_features(df):
 
 # === UI Setup ===
 st.set_page_config(page_title="Gas Wells Production Rate Predictor", layout="wide")
-col1, col2 = st.columns([1, 1])
-with col1:
-    if os.path.exists("OIP.jfif"):
-        st.image("OIP.jfif", width=150)
-    else:
-        st.warning("OIP.jfif not found.")
-with col2:
-    if os.path.exists("picocheiron_logo.jpeg"):
-        st.image("picocheiron_logo.jpeg", width=150)
-    else:
-        st.warning("Logo not found.")
 
-st.title("Gas Wells Production Rate Predictor")
+header_col1, header_col2, header_col3 = st.columns([1, 3, 1])
+with header_col1:
+    st.image("OIP.jfif", width=120)
+with header_col2:
+    st.markdown("<h1 style='text-align: center;'>Gas Wells Production Rate Predictor</h1>", unsafe_allow_html=True)
+with header_col3:
+    st.image("picocheiron_logo.jpeg", width=120)
+
 st.markdown("Upload a file or manually input well data to predict **Gas**, **Condensate**, and **Water** rates.")
 
 # === Input Method ===
 option = st.radio("Choose input method:", ("Manual Input", "Upload Excel File"))
 
-# === Get feature names from model
+# === Get feature names from model ===
 def get_expected_features(model):
     if hasattr(model, "get_booster"):
         return model.get_booster().feature_names
@@ -60,14 +56,21 @@ expected_features = get_expected_features(model_g)
 # === Manual Input ===
 if option == "Manual Input":
     with st.form("manual_form"):
-        thp = st.number_input('THP (bar)', value=50.0)
-        flp = st.number_input('FLP (bar)', value=30.0)
-        choke = st.number_input('Choke (%)', value=40.0)
-        flt = st.number_input('FLT ©', value=80.0)
-        gsg = st.number_input('Gas Specific Gravity', value=0.65)
-        api = st.number_input('Oil Gravity (API)', value=40.0)
-        dp1 = st.number_input('Venturi ΔP1 (mbar)', value=200.0)
-        dp2 = st.number_input('Venturi ΔP2 (mbar)', value=150.0)
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            thp = st.number_input('THP (bar)')
+            choke = st.number_input('Choke (%)')
+            flp = st.number_input('FLP (bar)')
+          
+        with col2:
+            flt = st.number_input('FLT ©')
+            api = st.number_input('Oil Gravity (API)', value=44.1)
+            gsg = st.number_input('Gas Specific Gravity', value=0.760)
+            
+        with col3:
+            dp1 = st.number_input('Venturi ΔP1 (mbar)')
+            dp2 = st.number_input('Venturi ΔP2 (mbar)')
+
         submitted = st.form_submit_button("Predict")
 
     if submitted:
@@ -79,19 +82,16 @@ if option == "Manual Input":
             }])
             feat = engineer_features(row)
             X = pd.concat([row, feat.drop(columns=row.columns)], axis=1)
-
-            # Ensure correct column order
             X = X[expected_features]
 
-            # Predictions
             gas = np.clip(model_g.predict(X), 0, None)[0]
             cond = np.clip(model_c.predict(X), 0, None)[0]
             water = np.clip(model_w.predict(X), 0, None)[0]
 
             st.success("✅ Predicted Rates")
-            st.write(f"**Gas Rate:** {gas:.4f} MMSCFD")
-            st.write(f"**Condensate Rate:** {cond:.4f} BPD")
-            st.write(f"**Water Rate:** {water:.4f} BPD")
+            st.markdown(f"**Gas Rate:** {gas:.2f} MMSCFD")
+            st.markdown(f"**Condensate Rate:** {int(cond)} BPD")
+            st.markdown(f"**Water Rate:** {int(water)} BPD")
         except Exception as e:
             st.error(f"Prediction failed: {e}")
 
@@ -113,17 +113,15 @@ else:
                 df_input = df_input[required_cols]
                 feat_df = engineer_features(df_input)
                 X_all = pd.concat([df_input, feat_df.drop(columns=df_input.columns)], axis=1)
-
-                # Match model training features
                 X_all = X_all[expected_features]
 
                 gas_pred = np.clip(model_g.predict(X_all), 0, None)
                 cond_pred = np.clip(model_c.predict(X_all), 0, None)
                 water_pred = np.clip(model_w.predict(X_all), 0, None)
 
-                df_input['Gas Rate (MMSCFD)'] = gas_pred
-                df_input['Condensate Rate (BPD)'] = cond_pred
-                df_input['Water Rate (BPD)'] = water_pred
+                df_input['Gas Rate (MMSCFD)'] = gas_pred.round(2)
+                df_input['Condensate Rate (BPD)'] = cond_pred.astype(int)
+                df_input['Water Rate (BPD)'] = water_pred.astype(int)
 
                 st.success("✅ Predictions completed. Download your results below.")
                 output = BytesIO()
