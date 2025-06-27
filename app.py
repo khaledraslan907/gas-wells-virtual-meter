@@ -68,21 +68,30 @@ expected_features = get_expected_features(model_g)
 # === Manual Input ===
 if option == "Manual Input":
     with st.form("manual_form"):
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            thp = st.number_input('THP (bar)', help="Tubing Head Pressure", step=None)
-            choke = st.number_input('Choke (%)', help="Choke Valve Opening (%)", step=None)
-            flp = st.number_input('FLP (bar)', help="Flowline Pressure", step=None)
-        with col2:
-            flt = st.number_input('FLT ©', help="Flowline Temperature (°C)", step=None)
-            api = st.number_input('Oil Gravity (API)', value=44.1, help="Oil Specific Gravity", step=None)
-            gsg = st.number_input('Gas Specific Gravity', value=0.760, help="Gas Specific Gravity", step=None)
-        with col3:
-            dp1 = st.number_input('Venturi ΔP1 (mbar)', help="Venturi Differential Pressure 1", step=None)
-            dp2 = st.number_input('Venturi ΔP2 (mbar)', help="Venturi Differential Pressure 2", step=None)
-        submitted = st.form_submit_button("Predict")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        thp = st.number_input('THP (bar)', help="Tubing Head Pressure", step=None, format="%.2f")
+        choke = st.number_input('Choke (%)', help="Choke Valve Opening (%)", step=None, format="%.2f")
+        flp = st.number_input('FLP (bar)', help="Flowline Pressure", step=None, format="%.2f")
+    
+    with col2:
+        flt = st.number_input('FLT ©', help="Flowline Temperature (°C)", step=None, format="%.2f")
+        api = st.number_input('Oil Gravity (API)', value=44.1, help="Default: typical oil gravity", step=None, format="%.2f")
+        gsg = st.number_input('Gas Specific Gravity', value=0.76, help="Default: typical gas gravity", step=None, format="%.2f")
+    
+    with col3:
+        dp1 = st.number_input('Venturi ΔP1 (mbar)', help="Venturi Differential Pressure 1", step=None, format="%.2f")
+        dp2 = st.number_input('Venturi ΔP2 (mbar)', help="Venturi Differential Pressure 2", step=None, format="%.2f")
+    
+    submitted = st.form_submit_button("Predict")
 
-    if submitted:
+# === Check that all fields are filled before prediction ===
+if submitted:
+    inputs = [thp, choke, flp, flt, api, gsg, dp1, dp2]
+    if any(val is None for val in inputs):
+        st.error("❗ Please fill in all input fields with valid non-zero values before predicting.")
+    else:
         try:
             row = pd.DataFrame([{
                 'THP (bar)': thp, 'FLP (bar)': flp, 'Choke (%)': choke,
