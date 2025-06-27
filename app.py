@@ -36,7 +36,7 @@ with header_col1:
 with header_col2:
     st.markdown("<h1 style='text-align: center;'>Gas Wells Production Rate Predictor</h1>", unsafe_allow_html=True)
 with header_col3:
-    st.image("picocheiron_logo.jpeg", width=100)
+    st.image("picocheiron_logo.jpg", width=100)
 
 st.markdown("Upload a file or manually input well data to predict **Gas**, **Condensate**, and **Water** rates.")
 
