@@ -28,7 +28,7 @@ def engineer_features(df):
 
 # === Unit Conversion Functions ===
 def psi_to_bar(psi):
-    return psi * 0.0689476
+    return psi * 0.0689655
 
 def f_to_c(f):
     return (f - 32) * 5.0 / 9.0
