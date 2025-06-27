@@ -40,7 +40,7 @@ with col2:
     st.markdown(
         """
         <div style="display: flex; align-items: flex-start; justify-content: flex-start; height: 100%;">
-            <h1 style="margin-top: 10px; font-size: 50px;">Gas Wells Production Rate Predictor</h1>
+            <h1 style="margin-top: 10px; font-size: 35px;">Gas Wells Production Rate Predictor</h1>
         </div>
         """,
         unsafe_allow_html=True
