@@ -66,25 +66,26 @@ def get_expected_features(model):
 expected_features = get_expected_features(model_g)
 
 # === Manual Input ===
+# === Manual Input ===
 if option == "Manual Input":
     with st.form("manual_form"):
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        thp = st.number_input('THP (bar)', help="Tubing Head Pressure", step=None, format="%.2f")
-        choke = st.number_input('Choke (%)', help="Choke Valve Opening (%)", step=None, format="%.2f")
-        flp = st.number_input('FLP (bar)', help="Flowline Pressure", step=None, format="%.2f")
-    
-    with col2:
-        flt = st.number_input('FLT ©', help="Flowline Temperature (°C)", step=None, format="%.2f")
-        api = st.number_input('Oil Gravity (API)', value=44.1, help="Default: typical oil gravity", step=None, format="%.2f")
-        gsg = st.number_input('Gas Specific Gravity', value=0.76, help="Default: typical gas gravity", step=None, format="%.2f")
-    
-    with col3:
-        dp1 = st.number_input('Venturi ΔP1 (mbar)', help="Venturi Differential Pressure 1", step=None, format="%.2f")
-        dp2 = st.number_input('Venturi ΔP2 (mbar)', help="Venturi Differential Pressure 2", step=None, format="%.2f")
-    
-    submitted = st.form_submit_button("Predict")
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            thp = st.number_input('THP (bar)', help="Tubing Head Pressure", step=None, format="%.2f")
+            choke = st.number_input('Choke (%)', help="Choke Valve Opening (%)", step=None, format="%.2f")
+            flp = st.number_input('FLP (bar)', help="Flowline Pressure", step=None, format="%.2f")
+
+        with col2:
+            flt = st.number_input('FLT ©', help="Flowline Temperature (°C)", step=None, format="%.2f")
+            api = st.number_input('Oil Gravity (API)', value=44.1, help="Default: typical oil gravity", step=None, format="%.2f")
+            gsg = st.number_input('Gas Specific Gravity', value=0.76, help="Default: typical gas gravity", step=None, format="%.2f")
+
+        with col3:
+            dp1 = st.number_input('Venturi ΔP1 (mbar)', help="Venturi Differential Pressure 1", step=None, format="%.2f")
+            dp2 = st.number_input('Venturi ΔP2 (mbar)', help="Venturi Differential Pressure 2", step=None, format="%.2f")
+
+        submitted = st.form_submit_button("Predict")
 
 # === Check that all fields are filled before prediction ===
 if submitted:
