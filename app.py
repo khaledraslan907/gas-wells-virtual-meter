@@ -29,18 +29,17 @@ def engineer_features(df):
 # === UI Setup ===
 st.set_page_config(page_title="Gas Wells Production Rate Predictor", layout="wide")
 
-# Aligned logos and centered title with spacing
-logo_col1, title_col, logo_col2 = st.columns([1, 3, 1])
-with logo_col1:
-    st.image("OIP.jfif", width=120)
-with title_col:
+header_col1, header_col2, header_col3 = st.columns([1, 3, 1])
+with header_col1:
+    st.image("OIP.jfif", width=100)
+with header_col2:
     st.markdown("""
-        <div style='text-align: center;'>
-            <h1 style='font-size: 2.5rem; margin: 0;'>Gas Wells Production Rate Predictor</h1>
-        </div>
+    <div style='text-align: center; margin-top: 20px;'>
+        <h1>Gas Wells Production Rate Predictor</h1>
+    </div>
     """, unsafe_allow_html=True)
-with logo_col2:
-    st.image("picocheiron_logo.jpeg", width=120)
+with header_col3:
+    st.image("picocheiron_logo.jpeg", width=100)
 
 st.markdown("Upload a file or manually input well data to predict **Gas**, **Condensate**, and **Water** rates.")
 
@@ -58,25 +57,21 @@ def get_expected_features(model):
 
 expected_features = get_expected_features(model_g)
 
-# === History ===
-if "history" not in st.session_state:
-    st.session_state.history = []
-
 # === Manual Input ===
 if option == "Manual Input":
     with st.form("manual_form"):
         col1, col2, col3 = st.columns(3)
         with col1:
-            thp = st.number_input('THP (bar)', help="Tubing Head Pressure")
-            choke = st.number_input('Choke (%)', help="Choke Valve Opening (%)")
-            flp = st.number_input('FLP (bar)', help="Flowline Pressure")
+            thp = st.number_input('THP (bar)', help="Tubing Head Pressure", step=None)
+            choke = st.number_input('Choke (%)', help="Choke Valve Opening (%)", step=None)
+            flp = st.number_input('FLP (bar)', help="Flowline Pressure", step=None)
         with col2:
-            flt = st.number_input('FLT ©', help="Flowline Temperature (°C)")
-            api = st.number_input('Oil Gravity (API)', value=44.1, help="Oil Specific Gravity")
-            gsg = st.number_input('Gas Specific Gravity', value=0.760, help="Gas Specific Gravity")
+            flt = st.number_input('FLT ©', help="Flowline Temperature (°C)", step=None)
+            api = st.number_input('Oil Gravity (API)', value=44.1, help="Oil Specific Gravity", step=None)
+            gsg = st.number_input('Gas Specific Gravity', value=0.760, help="Gas Specific Gravity", step=None)
         with col3:
-            dp1 = st.number_input('Venturi ΔP1 (mbar)', help="Venturi Differential Pressure 1")
-            dp2 = st.number_input('Venturi ΔP2 (mbar)', help="Venturi Differential Pressure 2")
+            dp1 = st.number_input('Venturi ΔP1 (mbar)', help="Venturi Differential Pressure 1", step=None)
+            dp2 = st.number_input('Venturi ΔP2 (mbar)', help="Venturi Differential Pressure 2", step=None)
         submitted = st.form_submit_button("Predict")
 
     if submitted:
@@ -98,9 +93,6 @@ if option == "Manual Input":
             st.markdown(f"**Gas Rate:** {gas:.2f} MMSCFD")
             st.markdown(f"**Condensate Rate:** {int(cond)} BPD")
             st.markdown(f"**Water Rate:** {int(water)} BPD")
-
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            st.session_state.history.append((timestamp, gas, cond, water))
 
         except Exception as e:
             st.error(f"Prediction failed: {e}")
