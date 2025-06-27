@@ -68,34 +68,37 @@ expected_features = get_expected_features(model_g)
 if option == "Manual Input":
     with st.form("manual_form"):
         col1, col2, col3 = st.columns(3)
-
+    
         with col1:
             thp = st.text_input('THP (bar)', help="Tubing Head Pressure")
-            choke = st.text_input('Choke (%)', help="Choke Valve Opening (%)")
+            choke = st.text_input('Choke (%)', help="Choke Valve Opening (0–100%)")
             flp = st.text_input('FLP (bar)', help="Flowline Pressure")
-
+    
         with col2:
-            flt = st.text_input('FLT ©', help="Flowline Temperature (\u00b0C)")
-            api = st.text_input('Oil Gravity (API)')
-            gsg = st.text_input('Gas Specific Gravity')
-
+            flt = st.text_input('FLT ©', help="Flowline Temperature (°C)")
+            api = st.text_input('Oil Gravity (API)', placeholder="e.g. 44.1", help="Typical Oil Gravity (default 44.1)")
+            gsg = st.text_input('Gas Specific Gravity', placeholder="e.g. 0.76", help="Typical Gas Gravity (default 0.76)")
+    
         with col3:
             dp1 = st.text_input('Venturi ΔP1 (mbar)', help="Venturi Differential Pressure 1")
             dp2 = st.text_input('Venturi ΔP2 (mbar)', help="Venturi Differential Pressure 2")
-
+    
         submitted = st.form_submit_button("Predict")
-
+    
     if submitted:
         try:
-            # Attempt to convert all inputs to float
+            # Attempt conversion
             inputs = {
                 'THP (bar)': float(thp), 'Choke (%)': float(choke), 'FLP (bar)': float(flp),
                 'FLT ©': float(flt), 'Oil Gravity (API)': float(api), 'Gas Specific Gravity': float(gsg),
                 'Venturi ΔP1 (mbar)': float(dp1), 'Venturi ΔP2 (mbar)': float(dp2)
             }
     
-            if any(val == "" or pd.isna(val) for val in inputs.values()):
-                st.error("❗ Please fill in all input fields before predicting.")
+            # Validation rules
+            if any(val < 0 for key, val in inputs.items() if key != 'Choke (%)'):
+                st.error("❗ All values must be positive numbers.")
+            elif not (0 <= inputs['Choke (%)'] <= 100):
+                st.error("❗ Choke (%) must be between 0 and 100.")
             else:
                 row = pd.DataFrame([inputs])
                 feat = engineer_features(row)
@@ -111,9 +114,10 @@ if option == "Manual Input":
                 st.markdown(f"**Condensate Rate:** {int(cond)} BPD")
                 st.markdown(f"**Water Rate:** {int(water)} BPD")
         except ValueError:
-            st.error("❗ Please enter only numbers in all fields.")
+            st.error("❗ Please enter only numeric values in all fields.")
         except Exception as e:
             st.error(f"❌ Prediction failed: {e}")
+
 
 
 # === File Upload ===
