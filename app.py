@@ -30,6 +30,13 @@ def engineer_features(df):
 st.set_page_config(page_title="Gas Wells Production Rate Predictor", layout="wide")
 
 # Layout
+# Load image safely
+def load_image_safely(path, width=None):
+    try:
+        return Image.open(path)
+    except Exception:
+        return None
+        
 col1, col2, col3 = st.columns([1, 2, 1])
 
 with col1:
