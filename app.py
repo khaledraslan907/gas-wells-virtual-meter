@@ -231,38 +231,31 @@ if submitted:
             st.success("✅ Feedback saved to Google Sheets.")
 
             # 2. Upload Excel to Google Drive if provided
+            FOLDER_ID = "https://drive.google.com/drive/folders/1BvJMeCR2NpCxMls0wtyWFqJHmg6aZmJX?usp=drive_link"
             if feedback_file:
                 filename = f"{well_id}_feedback_{timestamp.replace(':','-')}.xlsx"
             
-                # Save uploaded Excel file temporarily
+                # Save temporarily
                 with open(filename, "wb") as f:
                     f.write(feedback_file.read())
             
-                # Upload to Google Drive
+                # Upload to your shared folder in Google Drive
                 drive_creds = sheet_creds.with_scopes(["https://www.googleapis.com/auth/drive"])
                 drive_service = build("drive", "v3", credentials=drive_creds)
             
-                media = MediaFileUpload(filename, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                file_meta = {"name": filename}
-                uploaded = drive_service.files().create(
-                    body=file_meta,
-                    media_body=media,
-                    fields="id, webViewLink"
-                ).execute()
+                file_metadata = {
+                    "name": filename,
+                    "parents": [FOLDER_ID]  # <-- Save in shared folder
+                }
             
-                # 🔐 Auto-share the uploaded file with your Gmail
-                drive_service.permissions().create(
-                    fileId=uploaded['id'],
-                    body={
-                        "type": "user",
-                        "role": "writer",
-                        "emailAddress": "khaledraslan32@gmail.com"
-                    },
+                media = MediaFileUpload(filename, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                uploaded = drive_service.files().create(
+                    body=file_metadata,
+                    media_body=media,
                     fields="id"
                 ).execute()
             
-                st.success(f"📁 Excel saved to Drive and shared with your Gmail.")
-                st.markdown(f"[🔗 Open File]({uploaded['webViewLink']})")
+                st.success("📁 Excel saved directly to your shared Drive folder.")
 
 
         except Exception as e:
