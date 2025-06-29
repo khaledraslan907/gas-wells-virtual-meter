@@ -7,6 +7,7 @@ from io import BytesIO
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
+
 # === Load Models ===
 @st.cache_resource
 def load_models():
@@ -191,13 +192,43 @@ else:
             st.error(f"❌ Something went wrong: {e}")
 
 # === Feedback Form ===
+# === Google Sheets Setup ===
+def get_gsheet():
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds_dict = st.secrets["gcp_service_account"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    client = gspread.authorize(creds)
+    sheet = client.open("Gas-Wells-Virtual-Meter").sheet1  # Match your sheet name
+    return sheet
+    
 st.markdown("---")
 st.markdown("### Feedback or Correction")
-feedback = st.text_area("If you notice incorrect predictions or have additional notes, please share them below:")
-if st.button("Submit Feedback"):
-    if feedback.strip():
-        with open("user_feedback.txt", "a") as f:
-            f.write(feedback + "\n\n")
-        st.success("✅ Thank you for your feedback!")
+with st.form("feedback_form"):
+    name = st.text_input("Your Name")
+    well_id = st.text_input("Well ID")
+    feedback_text = st.text_area("Your Feedback or Notes")
+    feedback_file = st.file_uploader("Optional: Upload Excel File with Notes", type=["xlsx"])
+    submitted_feedback = st.form_submit_button("Submit Feedback")
+
+if submitted_feedback:
+    if not name or not well_id or not feedback_text.strip():
+        st.warning("⚠️ Please fill in your name, well ID, and feedback before submitting.")
     else:
-        st.warning("⚠️ Please enter some feedback before submitting.")
+        try:
+            sheet = get_gsheet()
+            file_info = f"Uploaded file: {feedback_file.name}" if feedback_file else ""
+            timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            # Append feedback to Google Sheets
+            sheet.append_row([name, well_id, feedback_text.strip(), file_info, timestamp])
+
+            st.success("✅ Feedback successfully saved to Google Sheets.")
+
+            # Optionally save uploaded Excel file locally (only works when running locally, not on Streamlit Cloud)
+            if feedback_file:
+                with open(f"uploaded_feedback_{well_id}.xlsx", "wb") as f:
+                    f.write(feedback_file.read())
+                st.info(f"📁 File saved as uploaded_feedback_{well_id}.xlsx (locally)")
+
+        except Exception as e:
+            st.error(f"❌ Failed to save feedback: {e}")
