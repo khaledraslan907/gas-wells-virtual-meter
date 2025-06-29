@@ -215,20 +215,23 @@ if submitted_feedback:
         st.warning("⚠️ Please fill in your name, well ID, and feedback before submitting.")
     else:
         try:
-            sheet = get_gsheet()
-            file_info = f"Uploaded file: {feedback_file.name}" if feedback_file else ""
-            timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
-
             # Append feedback to Google Sheets
+            sheet = get_gsheet()
+            timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+            file_info = feedback_file.name if feedback_file else "No file uploaded"
             sheet.append_row([name, well_id, feedback_text.strip(), file_info, timestamp])
-
             st.success("✅ Feedback successfully saved to Google Sheets.")
 
-            # Optionally save uploaded Excel file locally (only works when running locally, not on Streamlit Cloud)
+            # Save uploaded file locally (developer access only)
             if feedback_file:
-                with open(f"uploaded_feedback_{well_id}.xlsx", "wb") as f:
+                filename = f"uploaded_feedback_{well_id}.xlsx"
+                with open(filename, "wb") as f:
                     f.write(feedback_file.read())
-                st.info(f"📁 File saved as uploaded_feedback_{well_id}.xlsx (locally)")
+                with open(filename, "rb") as f:
+                    st.download_button("Download Uploaded Excel", f.read(), file_name=filename)
+                st.info(f"📁 Saved locally as {filename} and available to download.")
 
         except Exception as e:
-            st.error(f"❌ Failed to save feedback: {e}")
+            st.error(f"❌ Failed to save feedback: {str(e)}")
+
+
