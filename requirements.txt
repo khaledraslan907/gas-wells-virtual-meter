@@ -5,3 +5,5 @@ joblib
 openpyxl
 scikit-learn
 xgboost
+gspread
+oauth2client
