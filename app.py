@@ -200,35 +200,43 @@ def get_gsheet():
     client = gspread.authorize(creds)
     sheet = client.open("Gas-Wells-Virtual-Meter").sheet1  # Match your sheet name
     return sheet
+# === Google Drive Upload ===
+def upload_to_drive(filename, mime_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"):
+    scopes = ['https://www.googleapis.com/auth/drive']
+    creds = service_account.Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"], scopes=scopes
+    )
+    drive_service = build('drive', 'v3', credentials=creds)
+
+    file_metadata = {'name': filename}
+    media = MediaFileUpload(filename, mimetype=mime_type)
+    file = drive_service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields='id, name, webViewLink'
+    ).execute()
+
+    st.success(f"📁 File uploaded to Google Drive: [{file['name']}]({file['webViewLink']})")
     
+# === Feedback Form ===
 st.markdown("---")
 st.markdown("### Feedback or Correction")
-with st.form("feedback_form"):
-    name = st.text_input("Your Name")
-    well_id = st.text_input("Well ID")
-    feedback_text = st.text_area("Your Feedback or Notes")
-    feedback_file = st.file_uploader("Optional: Upload Excel File with Notes", type=["xlsx"])
-    submitted_feedback = st.form_submit_button("Submit Feedback")
-
-if submitted_feedback:
-    if not name or not well_id or not feedback_text.strip():
-        st.warning("⚠️ Please fill in your name, well ID, and feedback before submitting.")
-    else:
+feedback = st.text_area("If you notice incorrect predictions or have additional notes, please share them below:")
+if st.button("Submit Feedback"):
+    if feedback.strip():
         try:
-            sheet = get_gsheet()
-            file_info = f"Uploaded file: {feedback_file.name}" if feedback_file else ""
-            timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+            feedback_df = pd.DataFrame([[feedback]], columns=["Feedback"])
+            feedback_df.to_csv("user_feedback.txt", mode="a", index=False, header=False)
 
-            # Append feedback to Google Sheets
-            sheet.append_row([name, well_id, feedback_text.strip(), file_info, timestamp])
+            # Save to Google Sheets (assuming setup is complete)
+            import gspread
+            gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
+            sh = gc.open("Gas_Wells_Feedback")
+            worksheet = sh.sheet1
+            worksheet.append_row([feedback])
 
             st.success("✅ Feedback successfully saved to Google Sheets.")
-
-            # Optionally save uploaded Excel file locally (only works when running locally, not on Streamlit Cloud)
-            if feedback_file:
-                with open(f"uploaded_feedback_{well_id}.xlsx", "wb") as f:
-                    f.write(feedback_file.read())
-                st.info(f"📁 File saved as uploaded_feedback_{well_id}.xlsx (locally)")
-
         except Exception as e:
             st.error(f"❌ Failed to save feedback: {e}")
+    else:
+        st.warning("⚠️ Please enter some feedback before submitting.")
