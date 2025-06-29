@@ -6,6 +6,9 @@ import os
 from io import BytesIO
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
 
 # === Load Models ===
 @st.cache_resource
@@ -199,7 +202,7 @@ def get_gsheet():
     sheet = client.open("GasWellFeedback").sheet1  # Match your sheet name
     return sheet
 
-# === Feedback Section ===
+# Feedback Form
 st.markdown("---")
 st.markdown("### 📝 Feedback or Correction")
 
@@ -212,26 +215,41 @@ with st.form("feedback_form"):
 
 if submitted_feedback:
     if not name or not well_id or not feedback_text.strip():
-        st.warning("⚠️ Please fill in your name, well ID, and feedback before submitting.")
+        st.warning("⚠️ Please fill in your name, well ID, and feedback.")
     else:
         try:
-            # Append feedback to Google Sheets
-            sheet = get_gsheet()
-            timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
-            file_info = feedback_file.name if feedback_file else "No file uploaded"
-            sheet.append_row([name, well_id, feedback_text.strip(), file_info, timestamp])
-            st.success("✅ Feedback successfully saved to Google Sheets.")
+            # === Save feedback to Google Sheets ===
+            import gspread
+            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+            creds = ServiceAccountCredentials.from_json_keyfile_dict(
+                st.secrets["gcp_service_account"], scope
+            )
+            client = gspread.authorize(creds)
+            sheet = client.open("GasWellFeedback").sheet1
 
-            # Save uploaded file locally (developer access only)
+            timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
+            file_note = feedback_file.name if feedback_file else "None"
+            sheet.append_row([name, well_id, feedback_text.strip(), file_note, timestamp])
+            st.success("✅ Feedback saved to Google Sheets.")
+
+            # === Upload file to Google Drive ===
             if feedback_file:
-                filename = f"uploaded_feedback_{well_id}.xlsx"
-                with open(filename, "wb") as f:
+                file_name = f"{well_id}_feedback.xlsx"
+                with open(file_name, "wb") as f:
                     f.write(feedback_file.read())
-                with open(filename, "rb") as f:
-                    st.download_button("Download Uploaded Excel", f.read(), file_name=filename)
-                st.info(f"📁 Saved locally as {filename} and available to download.")
+
+                drive_creds = service_account.Credentials.from_service_account_info(
+                    st.secrets["gcp_service_account"],
+                    scopes=["https://www.googleapis.com/auth/drive"]
+                )
+                service = build("drive", "v3", credentials=drive_creds)
+
+                file_metadata = {"name": file_name}
+                media = MediaFileUpload(file_name, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                uploaded = service.files().create(body=file_metadata, media_body=media, fields="id, webViewLink").execute()
+
+                link = uploaded["webViewLink"]
+                st.success(f"📁 File uploaded to Google Drive: [View File]({link})")
 
         except Exception as e:
-            st.error(f"❌ Failed to save feedback: {str(e)}")
-
-
+            st.error(f"❌ Failed to save feedback: {e}")
