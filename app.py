@@ -258,7 +258,7 @@ if submitted:
                     fields="id"
                 ).execute()
                 
-                st.success(f"📁 Excel saved to Drive: [Open File]({uploaded['webViewLink']})")
+                st.success("📁 Excel saved to Drive")
 
 
 
