@@ -241,12 +241,26 @@ if submitted:
 
                 media = MediaFileUpload(filename, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                 file_meta = {"name": filename}
-                uploaded = drive_service.files().create(body=file_meta, media_body=media, fields="id, webViewLink").execute()
-
+                uploaded = drive_service.files().create(
+                    body=file_meta,
+                    media_body=media,
+                    fields="id, webViewLink"
+                ).execute()
+                
+                # 🔐 Auto-share the uploaded file with your Gmail
+                drive_service.permissions().create(
+                    fileId=uploaded['id'],
+                    body={
+                        "type": "user",
+                        "role": "writer",
+                        "emailAddress": "khaledraslan32@gmail.com"
+                    },
+                    fields="id"
+                ).execute()
+                
                 st.success(f"📁 Excel saved to Drive: [Open File]({uploaded['webViewLink']})")
 
-                with open(filename, "rb") as f:
-                    st.download_button("⬇️ Download Excel Locally", f.read(), file_name=filename)
+
 
         except Exception as e:
             st.error(f"❌ Failed to save feedback: {repr(e)}")
