@@ -224,7 +224,7 @@ if submitted:
                 scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
             )
             gc = gspread.authorize(sheet_creds)
-            ws = gc.open("GasWellFeedback").sheet1
+            ws = gc.open("Gas-Wells-Virtual-Meter").sheet1
 
             timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
             ws.append_row([name, well_id, feedback_text.strip(), feedback_file.name if feedback_file else "None", timestamp])
