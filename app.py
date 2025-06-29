@@ -202,7 +202,6 @@ def get_gsheet():
     sheet = client.open("Gas-Wells-Virtual-Meter").sheet1
     return sheet
 
-# Feedback Form
 st.markdown("---")
 st.markdown("### 📝 Feedback or Correction")
 
@@ -210,46 +209,44 @@ with st.form("feedback_form"):
     name = st.text_input("Your Name")
     well_id = st.text_input("Well ID")
     feedback_text = st.text_area("Your Feedback or Notes")
-    feedback_file = st.file_uploader("Optional: Upload Excel File with Notes", type=["xlsx"])
-    submitted_feedback = st.form_submit_button("Submit Feedback")
+    feedback_file = st.file_uploader("Upload an Excel file (optional)", type=["xlsx"])
+    submitted = st.form_submit_button("Submit Feedback")
 
-if submitted_feedback:
+if submitted:
     if not name or not well_id or not feedback_text.strip():
-        st.warning("⚠️ Please fill in your name, well ID, and feedback.")
+        st.warning("⚠️ Name, Well ID, and feedback are required.")
     else:
         try:
-            # === Save feedback to Google Sheets ===
+            # 1. Save to Google Sheets
             import gspread
-            scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-            creds = ServiceAccountCredentials.from_json_keyfile_dict(
-                st.secrets["gcp_service_account"], scope
+            sheet_creds = service_account.Credentials.from_service_account_info(
+                st.secrets["gcp_service_account"],
+                scopes=["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
             )
-            client = gspread.authorize(creds)
-            sheet = client.open("GasWellFeedback").sheet1
+            gc = gspread.authorize(sheet_creds)
+            ws = gc.open("GasWellFeedback").sheet1
 
             timestamp = pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S")
-            file_note = feedback_file.name if feedback_file else "None"
-            sheet.append_row([name, well_id, feedback_text.strip(), file_note, timestamp])
+            ws.append_row([name, well_id, feedback_text.strip(), feedback_file.name if feedback_file else "None", timestamp])
             st.success("✅ Feedback saved to Google Sheets.")
 
-            # === Upload file to Google Drive ===
+            # 2. Upload Excel to Google Drive if provided
             if feedback_file:
-                file_name = f"{well_id}_feedback.xlsx"
-                with open(file_name, "wb") as f:
+                filename = f"{well_id}_feedback_{timestamp.replace(':','-')}.xlsx"
+                with open(filename, "wb") as f:
                     f.write(feedback_file.read())
 
-                drive_creds = service_account.Credentials.from_service_account_info(
-                    st.secrets["gcp_service_account"],
-                    scopes=["https://www.googleapis.com/auth/drive"]
-                )
-                service = build("drive", "v3", credentials=drive_creds)
+                drive_creds = sheet_creds.with_scopes(["https://www.googleapis.com/auth/drive"])
+                drive_service = build("drive", "v3", credentials=drive_creds)
 
-                file_metadata = {"name": file_name}
-                media = MediaFileUpload(file_name, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                uploaded = service.files().create(body=file_metadata, media_body=media, fields="id, webViewLink").execute()
+                media = MediaFileUpload(filename, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                file_meta = {"name": filename}
+                uploaded = drive_service.files().create(body=file_meta, media_body=media, fields="id, webViewLink").execute()
 
-                link = uploaded["webViewLink"]
-                st.success(f"📁 File uploaded to Google Drive: [View File]({link})")
+                st.success(f"📁 Excel saved to Drive: [Open File]({uploaded['webViewLink']})")
+
+                with open(filename, "rb") as f:
+                    st.download_button("⬇️ Download Excel Locally", f.read(), file_name=filename)
 
         except Exception as e:
-            st.error(f"❌ Failed to save feedback: {e}")
+            st.error(f"❌ Failed to save feedback: {repr(e)}")
