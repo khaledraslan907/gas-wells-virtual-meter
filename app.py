@@ -233,12 +233,15 @@ if submitted:
             # 2. Upload Excel to Google Drive if provided
             if feedback_file:
                 filename = f"{well_id}_feedback_{timestamp.replace(':','-')}.xlsx"
+            
+                # Save uploaded Excel file temporarily
                 with open(filename, "wb") as f:
                     f.write(feedback_file.read())
-
+            
+                # Upload to Google Drive
                 drive_creds = sheet_creds.with_scopes(["https://www.googleapis.com/auth/drive"])
                 drive_service = build("drive", "v3", credentials=drive_creds)
-
+            
                 media = MediaFileUpload(filename, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                 file_meta = {"name": filename}
                 uploaded = drive_service.files().create(
@@ -246,7 +249,7 @@ if submitted:
                     media_body=media,
                     fields="id, webViewLink"
                 ).execute()
-                
+            
                 # 🔐 Auto-share the uploaded file with your Gmail
                 drive_service.permissions().create(
                     fileId=uploaded['id'],
@@ -257,9 +260,9 @@ if submitted:
                     },
                     fields="id"
                 ).execute()
-                
-                st.success("📁 Excel saved to Drive")
-
+            
+                st.success(f"📁 Excel saved to Drive and shared with your Gmail.")
+                st.markdown(f"[🔗 Open File]({uploaded['webViewLink']})")
 
 
         except Exception as e:
