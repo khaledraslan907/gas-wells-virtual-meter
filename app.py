@@ -4,7 +4,9 @@ import numpy as np
 import joblib
 import os
 from io import BytesIO
-
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+import json
 # === Load Models ===
 @st.cache_resource
 def load_models():
