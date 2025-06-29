@@ -199,7 +199,7 @@ def get_gsheet():
     creds_dict = st.secrets["gcp_service_account"]
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     client = gspread.authorize(creds)
-    sheet = client.open("GasWellFeedback").sheet1  # Match your sheet name
+    sheet = client.open("Gas-Wells-Virtual-Meter").sheet1
     return sheet
 
 # Feedback Form
