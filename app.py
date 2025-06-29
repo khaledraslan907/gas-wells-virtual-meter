@@ -7,6 +7,9 @@ from io import BytesIO
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import json
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
 
 # === Load Models ===
 @st.cache_resource
@@ -219,21 +222,57 @@ def upload_to_drive(filename, mime_type="application/vnd.openxmlformats-officedo
     st.success(f"📁 File uploaded to Google Drive: [{file['name']}]({file['webViewLink']})")
     
 # === Feedback Form ===
+# === Feedback Form + Excel upload to Google Drive ===
 st.markdown("---")
 st.markdown("### Feedback or Correction")
 feedback = st.text_area("If you notice incorrect predictions or have additional notes, please share them below:")
+excel_file = st.file_uploader("(Optional) Upload related Excel file", type=["xlsx"])
+
 if st.button("Submit Feedback"):
     if feedback.strip():
         try:
-            feedback_df = pd.DataFrame([[feedback]], columns=["Feedback"])
-            feedback_df.to_csv("user_feedback.txt", mode="a", index=False, header=False)
+            # Save feedback locally
+            with open("user_feedback.txt", "a") as f:
+                f.write(feedback + "\n\n")
 
-            # Save to Google Sheets (assuming setup is complete)
-            import gspread
+            # Save feedback to Google Sheets
             gc = gspread.service_account_from_dict(st.secrets["gcp_service_account"])
             sh = gc.open("Gas_Wells_Feedback")
             worksheet = sh.sheet1
             worksheet.append_row([feedback])
+            st.success("✅ Feedback successfully saved to Google Sheets.")
+
+            # If Excel uploaded, save and upload to Drive
+            if excel_file is not None:
+                local_name = "uploaded_feedback_g.xlsx"
+                with open(local_name, "wb") as f:
+                    f.write(excel_file.read())
+
+                # Upload to Google Drive
+                scopes = ['https://www.googleapis.com/auth/drive']
+                creds = service_account.Credentials.from_service_account_info(
+                    st.secrets["gcp_service_account"], scopes=scopes
+                )
+                drive_service = build('drive', 'v3', credentials=creds)
+
+                file_metadata = {'name': local_name}
+                media = MediaFileUpload(local_name, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                file = drive_service.files().create(
+                    body=file_metadata,
+                    media_body=media,
+                    fields='id, name, webViewLink'
+                ).execute()
+
+                st.success(f"📁 File uploaded to Google Drive: [{file['name']}]({file['webViewLink']})")
+
+                # Allow user to download it locally too
+                with open(local_name, "rb") as f:
+                    st.download_button("Download Uploaded Feedback Excel", data=f.read(), file_name=local_name)
+
+        except Exception as e:
+            st.error(f"❌ Failed to save feedback: {e}")
+    else:
+        st.warning("⚠️ Please enter some feedback before submitting.")
 
             st.success("✅ Feedback successfully saved to Google Sheets.")
         except Exception as e:
