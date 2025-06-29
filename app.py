@@ -231,7 +231,7 @@ if submitted:
             st.success("✅ Feedback saved to Google Sheets.")
 
             # 2. Upload Excel to Google Drive if provided
-            FOLDER_ID = "https://drive.google.com/drive/folders/1BvJMeCR2NpCxMls0wtyWFqJHmg6aZmJX?usp=drive_link"
+            FOLDER_ID = "1BvJMeCR2NpCxMls0wtyWFqJHmg6aZmJX"
             if feedback_file:
                 filename = f"{well_id}_feedback_{timestamp.replace(':','-')}.xlsx"
             
