@@ -9,20 +9,16 @@ from oauth2client.service_account import ServiceAccountCredentials
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-import requests
 
 # === Load Models ===
 @st.cache_resource
-def load_model_from_drive(secret_key):
-    url = st.secrets[secret_key]
-    response = requests.get(url)
-    with open(f"{secret_key}.pkl", "wb") as f:
-        f.write(response.content)
-    return joblib.load(f"{secret_key}.pkl")
+def load_models():
+    model_g = joblib.load("model_g_xgb.pkl")
+    model_c = joblib.load("model_c_xgb.pkl")
+    model_w = joblib.load("model_w_xgb.pkl")
+    return model_g, model_c, model_w
 
-model_g = load_model_from_drive("model_g_url")
-model_c = load_model_from_drive("model_c_url")
-model_w = load_model_from_drive("model_w_url")
+model_g, model_c, model_w = load_models()
 
 # === Feature Engineering ===
 def engineer_features(df):
@@ -235,22 +231,32 @@ if submitted:
             st.success("✅ Feedback saved to Google Sheets.")
 
             # 2. Upload Excel to Google Drive if provided
+            FOLDER_ID = "1BvJMeCR2NpCxMls0wtyWFqJHmg6aZmJX"
             if feedback_file:
                 filename = f"{well_id}_feedback_{timestamp.replace(':','-')}.xlsx"
+            
+                # Save temporarily
                 with open(filename, "wb") as f:
                     f.write(feedback_file.read())
-
+            
+                # Upload to your shared folder in Google Drive
                 drive_creds = sheet_creds.with_scopes(["https://www.googleapis.com/auth/drive"])
                 drive_service = build("drive", "v3", credentials=drive_creds)
-
+            
+                file_metadata = {
+                    "name": filename,
+                    "parents": [FOLDER_ID]  # <-- Save in shared folder
+                }
+            
                 media = MediaFileUpload(filename, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                file_meta = {"name": filename}
-                uploaded = drive_service.files().create(body=file_meta, media_body=media, fields="id, webViewLink").execute()
+                uploaded = drive_service.files().create(
+                    body=file_metadata,
+                    media_body=media,
+                    fields="id"
+                ).execute()
+            
+                st.success("📁 Excel saved directly to your shared Drive folder.")
 
-                st.success(f"📁 Excel saved to Drive: [Open File]({uploaded['webViewLink']})")
-
-                with open(filename, "rb") as f:
-                    st.download_button("⬇️ Download Excel Locally", f.read(), file_name=filename)
 
         except Exception as e:
             st.error(f"❌ Failed to save feedback: {repr(e)}")
