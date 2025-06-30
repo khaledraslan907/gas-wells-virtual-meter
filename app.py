@@ -143,7 +143,7 @@ if option == "Manual Input":
                     'Venturi ΔP1 (mbar)': dp1, 'Venturi ΔP2 (mbar)': dp2
                 }])
 
-                feat = engineer_features(input_row.drop(columns=["Well ID", "Date"]))
+                feat = engineer_features(row.drop(columns=["Well ID", "Date"]))
                 X = pd.concat([row.drop(columns=["Well ID", "Date"]), feat.drop(columns=feat.columns.intersection(row.columns))], axis=1)
                 X = X[expected_features]
 
