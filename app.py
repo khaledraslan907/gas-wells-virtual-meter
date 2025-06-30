@@ -72,6 +72,8 @@ st.markdown("Upload a file or manually input well data to predict **Gas**, **Con
 option = st.radio("Choose input method:", ("Manual Input", "Upload Excel File"))
 
 # === Get feature names from model ===
+model_g, model_c, model_w = load_models()
+
 def get_expected_features(model):
     if hasattr(model, "get_booster"):
         return model.get_booster().feature_names
