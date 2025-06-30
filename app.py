@@ -179,10 +179,7 @@ if option == "Manual Input":
                 result_row['Condensate Rate (BPD)'] = int(cond)
                 result_row['Water Rate (BPD)'] = int(water)
 
-                if session_df.empty:
-                    session_df = result_row
-                else:
-                    session_df = pd.concat([session_df, result_row], ignore_index=True)
+                session_df = pd.concat([session_df, result_row], ignore_index=True)
 
                 st.session_state["prediction_table"] = session_df
 
