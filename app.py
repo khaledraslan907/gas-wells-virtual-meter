@@ -57,7 +57,7 @@ with col2:
     st.markdown(
         """
         <div style="display: flex; align-items: flex-start; justify-content: flex-start; height: 100%;">
-            <h1 style="margin-top: 10px; font-size: 35px;">Gas Wells Production Rate Predictor</h1>
+            <h1 style="margin-top: 10px; font-size: 35px;">Gas Wells Virtual Meter</h1>
         </div>
         """,
         unsafe_allow_html=True
@@ -92,7 +92,6 @@ if option == "Manual Input":
         with col1:
             thp_unit = st.selectbox("THP Unit", ["bar", "psi"])
             thp_val = st.text_input("THP", help="Tubing Head Pressure")
-            choke_val = st.text_input("Choke (%)", help="Choke Valve Opening (%) (0-100)")
             flp_unit = st.selectbox("FLP Unit", ["bar", "psi"])
             flp_val = st.text_input("FLP", help="Flowline Pressure")
 
@@ -103,6 +102,7 @@ if option == "Manual Input":
             gsg_val = st.text_input("Gas Specific Gravity", value="0.76", help="Default: typical gas gravity")
 
         with col3:
+            choke_val = st.text_input("Choke (%)", help="Choke Valve Opening (%) (0-100)")
             dp1_val = st.text_input("Venturi ΔP1 (mbar)", help="Venturi Differential Pressure 1")
             dp2_val = st.text_input("Venturi ΔP2 (mbar)", help="Venturi Differential Pressure 2")
 
