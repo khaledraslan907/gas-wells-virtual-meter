@@ -112,6 +112,7 @@ if option == "Manual Input":
         submitted = st.form_submit_button("Predict")
 
     if submitted:
+        session_df = st.session_state.get("prediction_table", pd.DataFrame())
         try:
             inputs = [thp_val, choke_val, flp_val, flt_val, api_val, gsg_val, dp1_val, dp2_val]
             if any(val.strip() == "" or float(val) < 0 for val in inputs):
