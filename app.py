@@ -144,7 +144,7 @@ if option == "Manual Input":
                 }])
 
                 feat = engineer_features(input_row.drop(columns=["Well ID", "Date"]))
-                X = pd.concat([input_row.drop(columns=["Well ID", "Date"]), feat.drop(columns=feat.columns.intersection(input_row.columns))], axis=1)
+                X = pd.concat([row.drop(columns=["Well ID", "Date"]), feat.drop(columns=feat.columns.intersection(row.columns))], axis=1)
                 X = X[expected_features]
 
                 gas = np.clip(model_g.predict(X), 0, None)[0]
@@ -168,7 +168,7 @@ if option == "Manual Input":
                     """,
                     unsafe_allow_html=True
                 )
-                result_row = input_row.copy()
+                result_row = row.copy()
                 result_row['Gas Rate (MMSCFD)'] = gas
                 result_row['Condensate Rate (BPD)'] = int(cond)
                 result_row['Water Rate (BPD)'] = int(water)
