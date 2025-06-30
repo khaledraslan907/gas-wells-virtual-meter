@@ -188,24 +188,24 @@ if option == "Manual Input":
 
         except ValueError:
             st.error("❗ Please enter only numeric values in all fields.")
-# === Display Full Table and Clear Option ===
-st.markdown("---")
-st.subheader("📊 All Predictions This Session")
-
-session_df = st.session_state.get("prediction_table", pd.DataFrame())
-
-if not session_df.empty:
-    st.dataframe(session_df)
-
-    output = BytesIO()
-    session_df.to_excel(output, index=False, engine='openpyxl')
-    st.download_button("📥 Download All Predictions", output.getvalue(), file_name="well_predictions.xlsx")
-else:
-    st.info("No predictions yet.")
-
-if st.button("🗑️ Clear Prediction Table"):
-    st.session_state["prediction_table"] = pd.DataFrame()
-    st.success("Prediction table cleared.")
+    # === Display Full Table and Clear Option ===
+    st.markdown("---")
+    st.subheader("📊 All Predictions This Session")
+    
+    session_df = st.session_state.get("prediction_table", pd.DataFrame())
+    
+    if not session_df.empty:
+        st.dataframe(session_df)
+    
+        output = BytesIO()
+        session_df.to_excel(output, index=False, engine='openpyxl')
+        st.download_button("📥 Download All Predictions", output.getvalue(), file_name="well_predictions.xlsx")
+    else:
+        st.info("No predictions yet.")
+    
+    if st.button("🗑️ Clear Prediction Table"):
+        st.session_state["prediction_table"] = pd.DataFrame()
+        st.success("Prediction table cleared.")
 
 # === File Upload ===
 else:
