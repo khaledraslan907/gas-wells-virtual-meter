@@ -1,0 +1,12 @@
+streamlit
+pandas
+numpy
+joblib
+openpyxl
+scikit-learn
+xgboost
+gspread
+oauth2client
+google-api-python-client
+google-auth
+requests
