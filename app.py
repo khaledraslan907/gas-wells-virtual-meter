@@ -139,13 +139,14 @@ if option == "Manual Input":
                 row = pd.DataFrame([{
                     "Well ID": well_id,
                     "Date": str(date_val),
-                    'THP (bar)': thp, 'FLP (bar)': flp, 'Choke (%)': choke,
+                    'THP (bar)': thp, 'FLP (bar)': flp, 'Choke (%)': float(choke_val),
                     'FLT ©': flt, 'Gas Specific Gravity': gsg, 'Oil Gravity (API)': api,
                     'Venturi ΔP1 (mbar)': dp1, 'Venturi ΔP2 (mbar)': dp2
                 }])
 
                 feat = engineer_features(row.drop(columns=["Well ID", "Date"]))
-                X = pd.concat([row.drop(columns=["Well ID", "Date"]), feat.drop(columns=feat.columns.intersection(row.columns))], axis=1)
+                X = pd.concat([row.drop(columns=["Well ID", "Date","Choke (%)"]).astype(float).reset_index(drop=True), feat.drop(columns=feat.columns.intersection(row.columns)).astype(float).reset_index(drop=True)
+                ], axis=1))
                 X = X[expected_features]
 
                 gas = np.clip(model_g.predict(X), 0, None)[0]
