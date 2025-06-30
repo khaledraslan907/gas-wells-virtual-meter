@@ -9,16 +9,22 @@ from oauth2client.service_account import ServiceAccountCredentials
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-
+import requests
 # === Load Models ===
 @st.cache_resource
 def load_models():
-    model_g = joblib.load("model_g_xgb.pkl")
-    model_c = joblib.load("model_c_xgb.pkl")
-    model_w = joblib.load("model_w_xgb.pkl")
-    return model_g, model_c, model_w
+    def download_model(url, filename):
+        if not os.path.exists(filename):
+            r = requests.get(url)
+            with open(filename, 'wb') as f:
+                f.write(r.content)
+        return joblib.load(filename)
 
-model_g, model_c, model_w = load_models()
+    model_g = download_model(st.secrets["model_g_url"], "model_g_xgb.pkl")
+    model_c = download_model(st.secrets["model_c_url"], "model_c_xgb.pkl")
+    model_w = download_model(st.secrets["model_w_url"], "model_w_xgb.pkl")
+
+    return model_g, model_c, model_w
 
 # === Feature Engineering ===
 def engineer_features(df):
