@@ -45,13 +45,13 @@ def f_to_c(f):
     return (f - 32) * 5.0 / 9.0
 
 # === UI Setup ===
-st.set_page_config(page_title="Gas Wells Production Rate Predictor", layout="wide")
+st.set_page_config(page_title="Gas Wells Virtual Meter", layout="wide")
 
 # Layout
 col1, col2, col3 = st.columns([1, 2, 1])
 
 with col1:
-    st.image("OIP.jfif", width=120)
+    st.image("OIP.jfif", width=100)
 
 with col2:
     st.markdown(
@@ -64,7 +64,7 @@ with col2:
     )
 
 with col3:
-    st.image("picocheiron_logo.jpg", width=120)
+    st.image("picocheiron_logo.jpg", width=100)
 
 st.markdown("Upload a file or manually input well data to predict **Gas**, **Condensate**, and **Water** rates.")
 
@@ -87,24 +87,27 @@ expected_features = get_expected_features(model_g)
 # === Manual Input ===
 if option == "Manual Input":
     with st.form("manual_form"):
-        col1, col2, col3 = st.columns(3)
+        colA, colB = st.columns(2)
+        with colA:
+            well_id = st.text_input("Well ID")
+        with colB:
+            date_val = st.date_input("Date")
 
+        col1, col2, col3 = st.columns(3)
         with col1:
             thp_unit = st.selectbox("THP Unit", ["bar", "psi"])
-            thp_val = st.text_input("THP", help="Tubing Head Pressure")
+            thp_val = st.text_input("THP")
             flp_unit = st.selectbox("FLP Unit", ["bar", "psi"])
-            flp_val = st.text_input("FLP", help="Flowline Pressure")
-
+            flp_val = st.text_input("FLP")
         with col2:
             flt_unit = st.selectbox("Temperature Unit", ["°C", "°F"])
-            flt_val = st.text_input("FLT", help="Flowline Temperature")
-            api_val = st.text_input("Oil Gravity (API)", value="44.1", help="Default: typical oil gravity")
-            gsg_val = st.text_input("Gas Specific Gravity", value="0.76", help="Default: typical gas gravity")
-
+            flt_val = st.text_input("FLT")
+            api_val = st.text_input("Oil Gravity (API)", value="44.1")
+            gsg_val = st.text_input("Gas Specific Gravity", value="0.76")
         with col3:
-            choke_val = st.text_input("Choke (%)", help="Choke Valve Opening (%) (0-100)")
-            dp1_val = st.text_input("Venturi ΔP1 (mbar)", help="Venturi Differential Pressure 1")
-            dp2_val = st.text_input("Venturi ΔP2 (mbar)", help="Venturi Differential Pressure 2")
+            choke_val = st.text_input("Choke (%)")
+            dp1_val = st.text_input("Venturi ΔP1 (mbar)")
+            dp2_val = st.text_input("Venturi ΔP2 (mbar)")
 
         submitted = st.form_submit_button("Predict")
 
@@ -133,12 +136,15 @@ if option == "Manual Input":
                     flt = f_to_c(flt)
 
                 row = pd.DataFrame([{
+                    "Well ID": well_id,
+                    "Date": str(date_val),
                     'THP (bar)': thp, 'FLP (bar)': flp, 'Choke (%)': choke,
                     'FLT ©': flt, 'Gas Specific Gravity': gsg, 'Oil Gravity (API)': api,
                     'Venturi ΔP1 (mbar)': dp1, 'Venturi ΔP2 (mbar)': dp2
                 }])
-                feat = engineer_features(row)
-                X = pd.concat([row, feat.drop(columns=row.columns)], axis=1)
+
+                feat = engineer_features(input_row.drop(columns=["Well ID", "Date"]))
+                X = pd.concat([input_row.drop(columns=["Well ID", "Date"]), feat.drop(columns=feat.columns.intersection(input_row.columns))], axis=1)
                 X = X[expected_features]
 
                 gas = np.clip(model_g.predict(X), 0, None)[0]
@@ -162,6 +168,24 @@ if option == "Manual Input":
                     """,
                     unsafe_allow_html=True
                 )
+                result_row = input_row.copy()
+                result_row['Gas Rate (MMSCFD)'] = gas
+                result_row['Condensate Rate (BPD)'] = int(cond)
+                result_row['Water Rate (BPD)'] = int(water)
+
+                if session_df.empty:
+                    session_df = result_row
+                else:
+                    session_df = pd.concat([session_df, result_row], ignore_index=True)
+
+                st.session_state["prediction_table"] = session_df
+
+                st.success("✅ Prediction completed.")
+                st.dataframe(result_row)
+
+                output = BytesIO()
+                session_df.to_excel(output, index=False, engine='openpyxl')
+                st.download_button("📥 Download All Predictions", output.getvalue(), file_name="well_predictions.xlsx")
 
         except ValueError:
             st.error("❗ Please enter only numeric values in all fields.")
